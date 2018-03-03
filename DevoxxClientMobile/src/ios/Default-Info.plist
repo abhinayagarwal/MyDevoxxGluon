@@ -3,13 +3,23 @@
 <plist version="1.0">
 <dict>
         <key>CFBundleIdentifier</key>
-        <string>com.devoxx.mydevoxx.swift</string>
+        <string>com.voxxed.gluon</string>
         <key>CFBundleVersion</key>
-        <!-- buildnumber --><string>249</string>
+        <!-- buildnumber --><string>9</string>
         <key>CFBundleShortVersionString</key>
-        <string>2.6.0</string>
+        <string>1.0.0</string>
         <key>CFBundleExecutable</key>
         <string>DevoxxClient</string>
+
+<key>CFBundleIcons</key>
+     <dict>
+              <key>CFBundlePrimaryIcon</key>
+              <dict>
+                       <key>CFBundleIconName</key>
+                       <string>AppIcon</string>
+              </dict>
+     </dict>
+
         <key>CFBundleIconFiles</key>
         <array>
                 <string>Icon-60</string>
@@ -24,7 +34,7 @@
                 <string>Icon-Small</string>
         </array>
         <key>CFBundleName</key>
-        <string>Devoxx</string>
+        <string>Voxxed</string>
         <key>CFBundlePackageType</key>
         <string>APPL</string>
         <key>LSRequiresIPhoneOS</key>
@@ -64,7 +74,7 @@
             <string>remote-notification</string>
         </array>
         <key>MinimumOSVersion</key>
-	<string>8.0</string>        
+	<string>10.0</string>        
         <key>UIRequiresFullScreen</key>
         <string>YES</string>
 	<key>UIStatusBarStyle</key> 
@@ -96,7 +106,7 @@
     <array>
     <dict>
         <key>UILaunchImageMinimumOSVersion</key>
-        <string>8.0</string>
+        <string>10.0</string>
         <key>UILaunchImageName</key>
         <string>Default-375w-667h</string>
         <key>UILaunchImageOrientation</key>
@@ -106,7 +116,7 @@
     </dict>
     <dict>
         <key>UILaunchImageMinimumOSVersion</key>
-        <string>8.0</string>
+        <string>10.0</string>
         <key>UILaunchImageName</key>
         <string>Default-414w-736h</string>
         <key>UILaunchImageOrientation</key>
@@ -116,7 +126,7 @@
     </dict>
     <dict>
         <key>UILaunchImageMinimumOSVersion</key>
-        <string>8.0</string>
+        <string>10.0</string>
         <key>UILaunchImageName</key>
         <string>Default-portrait</string>
         <key>UILaunchImageOrientation</key>
@@ -126,7 +136,7 @@
     </dict>
     <dict>
         <key>UILaunchImageMinimumOSVersion</key>
-        <string>8.0</string>
+        <string>10.0</string>
         <key>UILaunchImageName</key>
         <string>Default-ipad105</string>
         <key>UILaunchImageOrientation</key>
@@ -136,7 +146,7 @@
     </dict>
     <dict>
         <key>UILaunchImageMinimumOSVersion</key>
-        <string>8.0</string>
+        <string>10.0</string>
         <key>UILaunchImageName</key>
         <string>Default-ipad129</string>
         <key>UILaunchImageOrientation</key>
@@ -146,7 +156,7 @@
     </dict>
     <dict>
         <key>UILaunchImageMinimumOSVersion</key>
-        <string>7.0</string>
+        <string>10.0</string>
         <key>UILaunchImageName</key>
         <string>Default-568h</string>
         <key>UILaunchImageOrientation</key>
@@ -156,7 +166,7 @@
     </dict>
     <dict>
         <key>UILaunchImageMinimumOSVersion</key>
-        <string>6.0</string>
+        <string>10.0</string>
         <key>UILaunchImageName</key>
         <string>Default</string>
         <key>UILaunchImageOrientation</key>
