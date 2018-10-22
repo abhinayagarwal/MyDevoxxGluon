@@ -92,6 +92,7 @@ public class SessionsPresenter  extends GluonPresenter<DevoxxApplication> {
     private static final MaterialDesignIcon FAVORITE_ICON = SessionListType.FAVORITES.getOnIcon();
 
     private static final PseudoClass PSEUDO_FILTER_ENABLED = PseudoClass.getPseudoClass("filter-enabled");
+    private boolean showRatingDialog;
 
     private enum ContentDisplayMode {
         ALL, FAVORITE
@@ -168,6 +169,14 @@ public class SessionsPresenter  extends GluonPresenter<DevoxxApplication> {
         });
     }
 
+    public void selectFavorite() {
+        favoriteButton.fire();
+    }
+
+    public void setShowRatingDialog(boolean value) {
+        showRatingDialog = true;
+    }
+
     private void createView() {
         // If favorite sessions are disabled, hide bottom navigation
         if (DevoxxSettings.conferenceHasFavorite(service.getConference())) {
@@ -178,7 +187,7 @@ public class SessionsPresenter  extends GluonPresenter<DevoxxApplication> {
     }
 
     private void showRatingDialog() {
-        if (service.showRatingDialog()) {
+        if (service.showRatingDialog() || showRatingDialog) {
             final GridPane reviewGrid = createReviewGrid();
             sessions.setTop(reviewGrid);
         } else {
@@ -196,7 +205,7 @@ public class SessionsPresenter  extends GluonPresenter<DevoxxApplication> {
             appBar.getActionItems().remove(refreshButton);
         };
         BottomNavigationButton sessionsButton = new BottomNavigationButton(DevoxxBundle.getString("OTN.BUTTON.SESSIONS"), SESSIONS_ICON.graphic(), allHandler);
-        
+
         // show favorite sessions
         EventHandler<ActionEvent> favoriteHandler = e -> {
             if (!service.isAuthenticated()) {
@@ -300,10 +309,6 @@ public class SessionsPresenter  extends GluonPresenter<DevoxxApplication> {
 
         return scheduleListView;
     }
-    
-    public void selectFavorite() {
-        favoriteButton.fire();
-    }
 
     /**
      * Adds either white or gray background to session cells
@@ -355,6 +360,7 @@ public class SessionsPresenter  extends GluonPresenter<DevoxxApplication> {
             sessions.setTop(null);
             Services.get(SettingsService.class).ifPresent(ss -> {
                 ss.store(service.getConference().getId() + "_" + DevoxxSettings.RATING, "SHOWN");
+                showRatingDialog = false;
             });
         });
         no.setOnAction(e -> {

@@ -65,7 +65,7 @@ public class DevoxxSettings {
      * boolean option to switch on/off local notification tests
      * Default: false
      */
-    public final static boolean NOTIFICATION_TESTS = false;
+    public final static boolean NOTIFICATION_TESTS = true;
 
     /**
      * Offset in seconds:
@@ -81,7 +81,7 @@ public class DevoxxSettings {
      * 
      * Window for testing: between Tuesday 6th and Saturday 10th
      */
-    public final static long NOTIFICATION_OFFSET = 12 * 24 * 60 * 60;
+    public final static long NOTIFICATION_OFFSET = 28 * 24 * 60 * 60 - 3 * 60 * 60 - 20 * 60;
 
     /**
      * Timeout in seconds to stop any order from the different experiences

@@ -51,6 +51,7 @@ import com.gluonhq.connect.GluonObservableList;
 import com.gluonhq.connect.GluonObservableObject;
 import com.gluonhq.connect.converter.JsonInputConverter;
 import com.gluonhq.connect.converter.JsonIterableInputConverter;
+import com.gluonhq.connect.converter.JsonOutputConverter;
 import com.gluonhq.connect.provider.DataProvider;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
@@ -59,7 +60,9 @@ import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.scene.control.Button;
 
+import javax.json.*;
 import java.io.*;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -87,6 +90,7 @@ public class DevoxxService implements Service {
 //    private static final String DEVOXX_CFP_DATA_URL = "https://s3-eu-west-1.amazonaws.com/cfpdevoxx/cfp.json";
 
     private static File rootDir;
+
     static {
         try {
             rootDir = Services.get(StorageService.class)
@@ -97,7 +101,7 @@ public class DevoxxService implements Service {
                 ras.addListener(RuntimeArgsService.LAUNCH_PUSH_NOTIFICATION_KEY, (f) -> {
                     LOG.log(Level.INFO, ">>> received a silent push notification with contents: " + f);
                     LOG.log(Level.INFO, "[DBG] writing reload file");
-                    File file = new File (rootDir, DevoxxSettings.RELOAD);
+                    File file = new File(rootDir, DevoxxSettings.RELOAD);
                     try (BufferedWriter br = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)))) {
                         br.write(f);
                         LOG.log(Level.INFO, "[DBG] writing silent notification file done");
@@ -328,7 +332,7 @@ public class DevoxxService implements Service {
                 e.getSource().getException()));
         return conferences;
     }
-    
+
     @Override
     public GluonObservableList<Conference> retrieveConferences() {
         RemoteFunctionList fnConferences = RemoteFunctionBuilder.create("allConferences")
@@ -360,7 +364,7 @@ public class DevoxxService implements Service {
             });
             conference.setOnFailed(e -> LOG.log(Level.WARNING, String.format(REMOTE_FUNCTION_FAILED_MSG, "conference"), e.getSource().getException()));
         }
-        
+
         return conference;
     }
 
@@ -380,23 +384,21 @@ public class DevoxxService implements Service {
     @Override
     public boolean showRatingDialog() {
         if (getConference() == null) return false;
-        return Services.get(SettingsService.class).map(ss -> {
-            String retrieve = ss.retrieve(getConference().getId() + "_" + DevoxxSettings.RATING);
-            if (retrieve == null) {
-                ZonedDateTime dateTimeRating = Util.findLastSessionOfLastDay(this).getStartDate().minusHours(1);
-                if (DevoxxSettings.NOTIFICATION_TESTS) {
-                    dateTimeRating = dateTimeRating.minus(DevoxxSettings.NOTIFICATION_OFFSET, SECONDS);
-                }
-                ZonedDateTime currentTime = ZonedDateTime.of(LocalDateTime.now(), ZoneId.systemDefault());
-                if (currentTime.isAfter(dateTimeRating)) {
-                    ss.store(getConference().getId() + "_" + DevoxxSettings.RATING, "SHOW");
-                    return true;
-                }
-            } else if (retrieve.equalsIgnoreCase("SHOW")) {
+        for (Rating rating : readRatings()) {
+            if (rating.getConferenceId().equals(getConference().getId()) && rating.getState() == Rating.State.SHOW) {
                 return true;
             }
-            return false;
-        }).orElse(false);
+        }
+        ZonedDateTime dateTimeRating = Util.findLastSessionOfLastDay(this).getStartDate().minusHours(1);
+        if (DevoxxSettings.NOTIFICATION_TESTS) {
+            dateTimeRating = dateTimeRating.minus(DevoxxSettings.NOTIFICATION_OFFSET, SECONDS);
+        }
+        ZonedDateTime currentTime = ZonedDateTime.of(LocalDateTime.now(), ZoneId.systemDefault());
+        if (currentTime.isAfter(dateTimeRating)) {
+            writeRating(new Rating(getConference().getId(), dateTimeRating, Rating.State.SHOW));
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -500,7 +502,7 @@ public class DevoxxService implements Service {
             retrievingSpeakers.set(false);
             LOG.log(Level.WARNING, String.format(REMOTE_FUNCTION_FAILED_MSG, "speakers"), e.getSource().getException());
         });
-        speakersList.setOnSucceeded(e -> { 
+        speakersList.setOnSucceeded(e -> {
             speakers.setAll(speakersList);
             retrievingSpeakers.set(false);
         });
@@ -591,7 +593,7 @@ public class DevoxxService implements Service {
         if (getConference() != null && getConference().getSessionTypes() != null) {
             Set<String> dedup = new HashSet<>();
             List<SessionType> types = new LinkedList<>();
-            for(SessionType t : getConference().getSessionTypes()) {
+            for (SessionType t : getConference().getSessionTypes()) {
                 if (!dedup.contains(t.getName())) {
                     dedup.add(t.getName());
                     if (!t.isPause()) {
@@ -686,7 +688,6 @@ public class DevoxxService implements Service {
                 findSession(sessionId.getId()).ifPresent(internalFavoredSessions::add);
             }
             internalFavoredSessionsListener = initializeSessionsListener(internalFavoredSessions, "favored");
-            ready.set(true);
             retrievingFavoriteSessions.set(false);
             finishNotificationsPreloading();
         });
@@ -759,7 +760,7 @@ public class DevoxxService implements Service {
 
     @Override
     public ObservableList<SponsorBadge> retrieveSponsorBadges(Sponsor sponsor) {
-        
+
         if (sponsorBadges == null) {
             sponsorBadges = internalRetrieveSponsorBadges(sponsor);
         }
@@ -842,7 +843,7 @@ public class DevoxxService implements Service {
 
     @Override
     public void refreshFavorites() {
-        if (getConference() != null && DevoxxSettings.conferenceHasFavoriteCount(getConference()) && 
+        if (getConference() != null && DevoxxSettings.conferenceHasFavoriteCount(getConference()) &&
                 (allFavorites.getState() == ConnectState.SUCCEEDED || allFavorites.getState() == ConnectState.FAILED)) {
             RemoteFunctionObject fnAllFavorites = RemoteFunctionBuilder.create("allFavorites")
                     .param("0", getCfpURL())
@@ -865,7 +866,7 @@ public class DevoxxService implements Service {
             });
         }
     }
-    
+
     @Override
     public User getAuthenticatedUser() {
         return authenticationClient.getAuthenticatedUser();
@@ -952,7 +953,7 @@ public class DevoxxService implements Service {
                 retrieveBadges();
                 retrieveSponsors();
             }
-            
+
             if (DevoxxSettings.conferenceHasFavorite(getConference())) {
                 retrieveFavoredSessions();
             }
@@ -982,8 +983,7 @@ public class DevoxxService implements Service {
         try {
             Integer.parseInt(string);
             return true;
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             return false;
         }
     }
@@ -1041,6 +1041,43 @@ public class DevoxxService implements Service {
         }
         if (f.getName().endsWith(".cache") || f.getName().endsWith(".info")) {
             f.delete();
+        }
+    }
+
+    private List<Rating> readRatings() {
+        List<Rating> ratings = new ArrayList<>();
+        try {
+            JsonIterableInputConverter<Rating> json = new JsonIterableInputConverter<>(Rating.class);
+            json.setInputStream(new FileInputStream(new File(rootDir, DevoxxSettings.RATING)));
+            while (json.hasNext()) {
+                ratings.add(json.next());
+            }
+        } catch (FileNotFoundException e) {
+            LOG.log(Level.SEVERE, "Unable to read rating file", e);
+        }
+        return ratings;
+    }
+
+    private void writeRating(Rating rating) {
+        List<Rating> ratings = new ArrayList<>();
+        File ratingFile = new File(rootDir, DevoxxSettings.RATING);
+        if (ratingFile.exists()) {
+            ratings.addAll(readRatings());
+        }
+        ratings.add(rating);
+        JsonArrayBuilder jsonArray = Json.createArrayBuilder();
+        for (Rating rat : ratings) {
+            jsonArray.add(Json.createObjectBuilder()
+                    .add("conferenceId", rat.getConferenceId())
+                    .add("ratingTime", rat.getRatingTime().toString())
+                    .add("state", rat.getState().name()));
+        }
+
+        File file = new File(rootDir, DevoxxSettings.RATING);
+        try (BufferedWriter br = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)))) {
+            br.write(jsonArray.build().toString());
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "Cannot write to rating file", e);
         }
     }
 }
